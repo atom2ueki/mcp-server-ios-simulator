@@ -6,6 +6,12 @@ A server that implements the Model Context Protocol (MCP) for iOS simulators, bu
 
 This project provides a bridge between iOS simulators and the Model Context Protocol, allowing for standardized communication with iOS simulator instances. It enables programmatic control of iOS simulators while leveraging the MCP protocol for consistent interfaces across different environments. The server utilizes stdio as its transport mechanism, making it ideal for integration with Claude Desktop and other MCP-compatible clients.
 
+## 🎬 Demo
+
+![iOS Simulator Demo](demo1.gif)
+
+*Demo showing how to boot an iOS simulator using the direct UDID approach*
+
 ## 🏗️ Architecture
 
 The server consists of three main components:
