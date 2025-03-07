@@ -119,8 +119,31 @@ The server provides the following MCP tools:
 
 ### Example Usage with Claude Desktop
 
-1. Configure Claude Desktop to use this server as an MCP tool
-2. Use the provided tools to control iOS simulators directly from Claude Desktop
+1. Configure Claude Desktop to use this server as an MCP tool:
+   - Open Claude Desktop
+   - Go to Settings > Advanced
+   - Add the following configuration to the "MCP Servers" section:
+
+   ```json
+   {
+     "mcpServers": {
+       "simulator": {
+         "command": "node",
+         "args": [
+           "/path/to/your/mcp-server-ios-simulator/dist/index.js"
+         ]
+       }
+     }
+   }
+   ```
+
+   - Replace `/path/to/your` with the actual path to where you've installed this repository
+   - Save the settings and restart Claude Desktop
+
+2. Use the provided tools to control iOS simulators directly from Claude Desktop:
+   - Type commands like "Create a new iPhone simulator" or "Take a screenshot of the current simulator" 
+   - Claude will use the MCP server to execute these commands on your behalf
+   - You can use any of the tools listed above by asking Claude to perform the corresponding action
 
 ## Development
 
