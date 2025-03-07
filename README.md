@@ -73,9 +73,21 @@ Create a `config.json` file or use environment variables to configure the server
   },
   "server": {
     "host": "localhost",
-    "port": 3000
+    "port": 3001
   }
 }
+```
+
+Alternatively, you can use environment variables:
+
+```
+SIMULATOR_DEFAULT_DEVICE=iPhone 14
+SIMULATOR_DEFAULT_OS=16.4
+SIMULATOR_TIMEOUT=30000
+MCP_PORT=8080
+MCP_LOG_LEVEL=info
+SERVER_HOST=localhost
+SERVER_PORT=3001
 ```
 
 ## Usage
@@ -148,48 +160,7 @@ npm run build
 ```bash
 # Run all tests
 npm test
-
-# Run specific test suites
-npm run test:unit
-npm run test:integration
 ```
-
-## Implementation Plan
-
-1. **Setup Project Structure**
-   - Initialize a TypeScript project
-   - Install dependencies (appium-ios-simulator, MCP SDK)
-   - Configure build tools and testing infrastructure
-
-2. **Implement Simulator Interface**
-   - Create wrappers around appium-ios-simulator APIs
-   - Add logging and error handling
-   - Build simulator device discovery and selection
-
-3. **Implement MCP Protocol Handlers**
-   - Initialize the MCP SDK
-   - Set up message handlers for different MCP operations
-   - Create context management for simulator sessions
-
-4. **Develop Bridge Logic**
-   - Map MCP operations to simulator commands
-   - Implement result transformation and response formatting
-   - Handle asynchronous operations and callback patterns
-
-5. **Add API Server Layer**
-   - Create HTTP/WebSocket endpoints for external communication
-   - Implement authentication and session management
-   - Add configuration options for different deployment scenarios
-
-## Contributing
-
-Contributions are welcome! Please feel free to submit a Pull Request.
-
-1. Fork the repository
-2. Create your feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add some amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
 
 ## License
 
