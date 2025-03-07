@@ -109,6 +109,9 @@ class SimulatorMcpServer {
       async (params) => {
         fileLogger.info('Creating simulator session', params);
         try {
+          // Get available simulators to provide helpful error messages if needed
+          const availableSimulators = await simulatorManager.getAllSimulators();
+          
           const session = await simulatorManager.createSession({
             deviceName: params.deviceName,
             platformVersion: params.platformVersion,
@@ -141,10 +144,44 @@ class SimulatorMcpServer {
           };
         } catch (error) {
           fileLogger.error('Failed to create simulator session', { error });
+          
+          // Get available simulators to provide helpful error messages
+          let helpText = "";
+          try {
+            const availableSimulators = await simulatorManager.getAllSimulators();
+            
+            // Group by iOS version for better readability
+            const devicesByVersion: Record<string, string[]> = {};
+            
+            availableSimulators.forEach(simulator => {
+              const version = simulator.runtime.replace('com.apple.CoreSimulator.SimRuntime.iOS-', '').replace(/\./g, '-');
+              if (!devicesByVersion[version]) {
+                devicesByVersion[version] = [];
+              }
+              devicesByVersion[version].push(simulator.name);
+            });
+            
+            // Generate helpful message with available devices
+            helpText = "\n\nAvailable simulators:\n";
+            for (const [version, devices] of Object.entries(devicesByVersion)) {
+              const formattedVersion = version.replace(/-/g, '.');
+              helpText += `\n📱 iOS ${formattedVersion}:\n`;
+              helpText += devices.sort().map((d: string) => `  - ${d}`).join('\n');
+              helpText += '\n';
+            }
+            
+            helpText += "\n🔎 Tips for specifying device names:\n";
+            helpText += "  - Use the exact name as listed above (e.g., 'iPhone 16 Pro')\n";
+            helpText += "  - For platformVersion, use the format '18.2' (not 'iOS 18.2')\n";
+            helpText += "  - You can also use a UDID directly as the deviceName\n";
+          } catch (helpError) {
+            helpText = "\nCould not retrieve list of available simulators.";
+          }
+          
           return {
             content: [{
               type: 'text',
-              text: `Error: ${error instanceof Error ? error.message : String(error)}`
+              text: `Error: ${error instanceof Error ? error.message : String(error)}${helpText}`
             }],
             isError: true
           };
@@ -485,12 +522,15 @@ class SimulatorMcpServer {
           
           if (bootedSimulators.length === 0) {
             tableText += "No simulators currently booted.\n";
+            tableText += "─────────────────────────────────────────────────────\n";
+            tableText += "\n💡 Tip: Use the 'create-and-boot-simulator' tool to create and boot a simulator.\n";
+            tableText += "Example: create-and-boot-simulator with deviceName='iPhone 16 Pro' and platformVersion='18.2'\n";
           } else {
             bootedSimulators.forEach(sim => {
               tableText += `${sim.udid} | ${sim.name.padEnd(13)} | ${sim.state.padEnd(6)} | ${sim.runtime}\n`;
             });
+            tableText += "─────────────────────────────────────────────────────\n";
           }
-          tableText += "─────────────────────────────────────────────────────\n";
           
           // For debugging, append the original JSON at the bottom
           tableText += "\nOriginal JSON data:\n```\n";
@@ -604,10 +644,44 @@ class SimulatorMcpServer {
           };
         } catch (error) {
           fileLogger.error('Failed to create and boot simulator', { error });
+          
+          // Get available simulators to provide helpful error messages
+          let helpText = "";
+          try {
+            const availableSimulators = await simulatorManager.getAllSimulators();
+            
+            // Group by iOS version for better readability
+            const devicesByVersion: Record<string, string[]> = {};
+            
+            availableSimulators.forEach(simulator => {
+              const version = simulator.runtime.replace('com.apple.CoreSimulator.SimRuntime.iOS-', '').replace(/\./g, '-');
+              if (!devicesByVersion[version]) {
+                devicesByVersion[version] = [];
+              }
+              devicesByVersion[version].push(simulator.name);
+            });
+            
+            // Generate helpful message with available devices
+            helpText = "\n\nAvailable simulators:\n";
+            for (const [version, devices] of Object.entries(devicesByVersion)) {
+              const formattedVersion = version.replace(/-/g, '.');
+              helpText += `\n📱 iOS ${formattedVersion}:\n`;
+              helpText += devices.sort().map((d: string) => `  - ${d}`).join('\n');
+              helpText += '\n';
+            }
+            
+            helpText += "\n🔎 Tips for specifying device names:\n";
+            helpText += "  - Use the exact name as listed above (e.g., 'iPhone 16 Pro')\n";
+            helpText += "  - For platformVersion, use the format '18.2' (not 'iOS 18.2')\n";
+            helpText += "  - You can also use a UDID directly as the deviceName\n";
+          } catch (helpError) {
+            helpText = "\nCould not retrieve list of available simulators.";
+          }
+          
           return {
             content: [{
               type: 'text',
-              text: `Error: ${error instanceof Error ? error.message : String(error)}`
+              text: `Error: ${error instanceof Error ? error.message : String(error)}${helpText}`
             }],
             isError: true
           };
