@@ -523,13 +523,15 @@ class SimulatorMcpServer {
           if (bootedSimulators.length === 0) {
             tableText += "No simulators currently booted.\n";
             tableText += "─────────────────────────────────────────────────────\n";
-            tableText += "\n💡 Tip: Use the 'create-and-boot-simulator' tool to create and boot a simulator.\n";
-            tableText += "Example: create-and-boot-simulator with deviceName='iPhone 16 Pro' and platformVersion='18.2'\n";
+            tableText += "\n💡 Tip: Use the direct UDID approach for simplicity:\n";
+            tableText += "1. First, list available simulators: list-available-simulators\n";
+            tableText += "2. Then boot one directly: boot-simulator-by-udid with udid='UDID_HERE'\n";
           } else {
             bootedSimulators.forEach(sim => {
               tableText += `${sim.udid} | ${sim.name.padEnd(13)} | ${sim.state.padEnd(6)} | ${sim.runtime}\n`;
             });
             tableText += "─────────────────────────────────────────────────────\n";
+            tableText += "\n💡 Tip: To shut down a simulator, use: shutdown-simulator-by-udid with udid='UDID_HERE'\n";
           }
           
           // For debugging, append the original JSON at the bottom
@@ -771,6 +773,112 @@ class SimulatorMcpServer {
           };
         } catch (error) {
           fileLogger.error(`Failed to shutdown simulator by UDID: ${udid}`, { error });
+          return {
+            content: [{
+              type: 'text',
+              text: `Error: ${error instanceof Error ? error.message : String(error)}`
+            }],
+            isError: true
+          };
+        }
+      }
+    );
+
+    // Boot simulator directly by UDID
+    this.server.tool(
+      'boot-simulator-by-udid',
+      {
+        udid: z.string()
+      },
+      async (params) => {
+        fileLogger.info(`Booting simulator directly by UDID: ${params.udid}`);
+        try {
+          const result = await simulatorManager.directBootByUDID(params.udid);
+          if (result) {
+            return {
+              content: [{
+                type: 'text',
+                text: `Successfully booted simulator with UDID: ${params.udid}`
+              }]
+            };
+          } else {
+            return {
+              content: [{
+                type: 'text',
+                text: `Failed to boot simulator with UDID: ${params.udid}`
+              }],
+              isError: true
+            };
+          }
+        } catch (error) {
+          fileLogger.error(`Failed to boot simulator by UDID: ${params.udid}`, { error });
+          return {
+            content: [{
+              type: 'text',
+              text: `Error: ${error instanceof Error ? error.message : String(error)}`
+            }],
+            isError: true
+          };
+        }
+      }
+    );
+    
+    // List all available simulators (not just booted ones)
+    this.server.tool(
+      'list-available-simulators',
+      {},
+      async () => {
+        fileLogger.info('Listing all available simulators');
+        try {
+          const availableSimulators = await simulatorManager.getAllSimulators();
+          
+          // Group by iOS version for better readability
+          const devicesByVersion: Record<string, string[]> = {};
+          const udidMap: Record<string, string> = {};
+          
+          availableSimulators.forEach(simulator => {
+            const version = simulator.runtime.replace('com.apple.CoreSimulator.SimRuntime.iOS-', '').replace(/\./g, '-');
+            if (!devicesByVersion[version]) {
+              devicesByVersion[version] = [];
+            }
+            devicesByVersion[version].push(simulator.name);
+            udidMap[`${simulator.name}-${version}`] = simulator.udid;
+          });
+          
+          // Generate table format with UDIDs
+          let tableText = "AVAILABLE SIMULATORS\n";
+          tableText += "─────────────────────────────────────────────────────\n";
+          tableText += "NAME                 | iOS VERSION | STATE    | UDID\n";
+          tableText += "─────────────────────────────────────────────────────\n";
+          
+          for (const [version, devices] of Object.entries(devicesByVersion)) {
+            const formattedVersion = version.replace(/-/g, '.');
+            devices.sort().forEach((deviceName: string) => {
+              const simulator = availableSimulators.find(s => s.name === deviceName && s.runtime.includes(version.replace(/-/g, '.')));
+              const state = simulator ? simulator.state : 'Unknown';
+              const udid = simulator ? simulator.udid : 'Unknown';
+              tableText += `${deviceName.padEnd(20)} | iOS ${formattedVersion.padEnd(9)} | ${state.padEnd(8)} | ${udid}\n`;
+            });
+          }
+          tableText += "─────────────────────────────────────────────────────\n";
+          
+          tableText += "\n💡 Tips for working with simulators:\n";
+          tableText += "1. To boot a simulator: boot-simulator-by-udid with udid='UDID_HERE'\n";
+          tableText += "2. To shutdown a simulator: shutdown-simulator-by-udid with udid='UDID_HERE'\n";
+          
+          // For debugging, append the original JSON at the bottom
+          tableText += "\nOriginal JSON data:\n```\n";
+          tableText += JSON.stringify(availableSimulators, null, 2);
+          tableText += "\n```";
+          
+          return {
+            content: [{
+              type: 'text',
+              text: tableText
+            }]
+          };
+        } catch (error) {
+          fileLogger.error('Failed to list available simulators', { error });
           return {
             content: [{
               type: 'text',

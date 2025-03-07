@@ -585,6 +585,58 @@ class SimulatorManager {
       return [];
     }
   }
+
+  /**
+   * Boot a simulator directly by UDID without creating a session
+   * @param udid The UDID of the simulator to boot
+   * @returns True if the simulator was booted successfully, false otherwise
+   */
+  async directBootByUDID(udid: string): Promise<boolean> {
+    fileLogger.info(`Directly booting simulator with UDID: ${udid}`);
+    
+    try {
+      // First check if a simulator with this UDID exists
+      const allSimulators = await this.getAllSimulators();
+      const simulator = allSimulators.find(sim => sim.udid === udid);
+      
+      if (!simulator) {
+        fileLogger.error(`No simulator found with UDID: ${udid}`);
+        return false;
+      }
+      
+      // Check if the simulator is already booted
+      const bootedSimulators = await this.getBootedSimulators();
+      const isAlreadyBooted = bootedSimulators.some(sim => sim.udid === udid);
+      
+      if (isAlreadyBooted) {
+        fileLogger.info(`Simulator with UDID ${udid} is already booted`);
+        return true;
+      }
+      
+      // Get a simulator instance from appium-ios-simulator
+      const simulatorInstance = await getSimulator(udid);
+      
+      // Boot the simulator
+      fileLogger.info(`Running simulator with UDID: ${udid}`);
+      await simulatorInstance.run();
+      
+      // Verify the simulator has booted
+      await new Promise(resolve => setTimeout(resolve, 2000)); // Wait for simulator to register as booted
+      const newBootedSimulators = await this.getBootedSimulators();
+      const didBoot = newBootedSimulators.some(sim => sim.udid === udid);
+      
+      if (didBoot) {
+        fileLogger.info(`Successfully booted simulator with UDID: ${udid}`);
+        return true;
+      } else {
+        fileLogger.error(`Simulator with UDID ${udid} did not register as booted after run() command`);
+        return false;
+      }
+    } catch (error) {
+      fileLogger.error(`Failed to boot simulator with UDID: ${udid}`, { error });
+      return false;
+    }
+  }
 }
 
 export default new SimulatorManager(); 

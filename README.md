@@ -96,17 +96,19 @@ npm start
 
 The server provides the following MCP tools:
 
-#### 📱 Simulator Session Management
+#### 📱 Simulator Management (Simplified Direct Approach)
+- 📋 `list-available-simulators` - List all available simulators with their UDIDs
+- ▶️ `boot-simulator-by-udid` - Boot a simulator directly by UDID
+- ⏹️ `shutdown-simulator-by-udid` - Shutdown a simulator directly by UDID
+- 📊 `list-booted-simulators` - List all currently booted simulators
+
+#### 📱 Simulator Session Management (Advanced Features)
 - 📋 `list-simulator-sessions` - List all active simulator sessions
 - ➕ `create-simulator-session` - Create a new simulator session with optional device and OS parameters
 - ❌ `terminate-simulator-session` - Terminate an existing simulator session
 - 🔄 `create-and-boot-simulator` - Create a new simulator session and boot it in one step
-
-#### 🎮 Simulator Control
 - ▶️ `boot-simulator` - Boot a simulator by session ID
 - ⏹️ `shutdown-simulator` - Shutdown a simulator by session ID
-- 🆔 `shutdown-simulator-by-udid` - Shutdown a simulator directly using its UDID
-- 📊 `list-booted-simulators` - List all currently booted simulators
 
 #### 📲 Application Management
 - 📥 `install-app` - Install an application on a simulator
@@ -141,6 +143,13 @@ The server provides the following MCP tools:
    - Save the settings and restart Claude Desktop
 
 2. Use the provided tools to control iOS simulators directly from Claude Desktop:
+   
+   **Simplified Direct Usage (Recommended):**
+   - Ask Claude: "Show me available iOS simulators"
+   - Ask Claude: "Boot the iPhone 16 simulator with UDID 5272EA61-5796-4372-86FE-3B33831D5CC1"
+   - Ask Claude: "Shut down the simulator with UDID 5272EA61-5796-4372-86FE-3B33831D5CC1"
+   
+   **Advanced Session-Based Usage:**
    - Type commands like "Create a new iPhone simulator" or "Take a screenshot of the current simulator" 
    - Claude will use the MCP server to execute these commands on your behalf
    - You can use any of the tools listed above by asking Claude to perform the corresponding action
