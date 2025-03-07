@@ -10,7 +10,7 @@ This project provides a bridge between iOS simulators and the Model Context Prot
 
 ![iOS Simulator Demo](demo/demo1.gif)
 
-*Demo showing how to boot an iOS simulator using the direct UDID approach*
+*Demo showing how to boot an iOS simulator using Claude AI Desktop*
 
 ## 🏗️ Architecture
 
