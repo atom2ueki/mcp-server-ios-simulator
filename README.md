@@ -8,7 +8,7 @@ This project provides a bridge between iOS simulators and the Model Context Prot
 
 ## 🎬 Demo
 
-![iOS Simulator Demo](demo1.gif)
+![iOS Simulator Demo](demo/demo1.gif)
 
 *Demo showing how to boot an iOS simulator using the direct UDID approach*
 
