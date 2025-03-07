@@ -278,6 +278,8 @@ class SimulatorManager {
 
   /**
    * Terminates and removes a simulator session
+   * Note: This does more than just shutting down - it also cleans up the session record.
+   * Use this when you want to completely remove a session, not just shut down the simulator.
    */
   async terminateSession(sessionId: string): Promise<boolean> {
     const session = this.sessions.get(sessionId);
@@ -587,12 +589,12 @@ class SimulatorManager {
   }
 
   /**
-   * Boot a simulator directly by UDID without creating a session
+   * Boot a simulator by UDID without creating a session
    * @param udid The UDID of the simulator to boot
    * @returns True if the simulator was booted successfully, false otherwise
    */
-  async directBootByUDID(udid: string): Promise<boolean> {
-    fileLogger.info(`Directly booting simulator with UDID: ${udid}`);
+  async bootByUDID(udid: string): Promise<boolean> {
+    fileLogger.info(`Booting simulator with UDID: ${udid}`);
     
     try {
       // First check if a simulator with this UDID exists

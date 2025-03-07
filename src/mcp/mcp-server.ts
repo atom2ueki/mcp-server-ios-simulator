@@ -793,7 +793,7 @@ class SimulatorMcpServer {
       async (params) => {
         fileLogger.info(`Booting simulator directly by UDID: ${params.udid}`);
         try {
-          const result = await simulatorManager.directBootByUDID(params.udid);
+          const result = await simulatorManager.bootByUDID(params.udid);
           if (result) {
             return {
               content: [{

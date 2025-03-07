@@ -96,19 +96,19 @@ npm start
 
 The server provides the following MCP tools:
 
-#### 📱 Simulator Management (Simplified Direct Approach)
+#### 📱 Simulator Management (Simplified Approach)
 - 📋 `list-available-simulators` - List all available simulators with their UDIDs
-- ▶️ `boot-simulator-by-udid` - Boot a simulator directly by UDID
-- ⏹️ `shutdown-simulator-by-udid` - Shutdown a simulator directly by UDID
+- ▶️ `boot-simulator-by-udid` - Boot a simulator directly using its UDID
+- ⏹️ `shutdown-simulator-by-udid` - Shutdown a simulator directly using its UDID
 - 📊 `list-booted-simulators` - List all currently booted simulators
 
-#### 📱 Simulator Session Management (Advanced Features)
+#### 📱 Simulator Session Management (For Advanced Use Cases)
 - 📋 `list-simulator-sessions` - List all active simulator sessions
-- ➕ `create-simulator-session` - Create a new simulator session with optional device and OS parameters
-- ❌ `terminate-simulator-session` - Terminate an existing simulator session
-- 🔄 `create-and-boot-simulator` - Create a new simulator session and boot it in one step
-- ▶️ `boot-simulator` - Boot a simulator by session ID
-- ⏹️ `shutdown-simulator` - Shutdown a simulator by session ID
+- ➕ `create-simulator-session` - Create a new simulator session
+- ❌ `terminate-simulator-session` - Terminate a session (shuts down simulator and cleans up)
+- 🔄 `create-and-boot-simulator` - Create a new simulator session and boot it
+- ▶️ `boot-simulator` - Boot a simulator for an existing session
+- ⏹️ `shutdown-simulator` - Shutdown a simulator for an existing session
 
 #### 📲 Application Management
 - 📥 `install-app` - Install an application on a simulator
