@@ -105,7 +105,25 @@ class SimulatorManager {
   }
 
   /**
-   * Creates a new simulator session
+   * Creates a simulator session with the specified options
+   * 
+   * IMPORTANT: This method is part of the SESSION-BASED management approach.
+   * It's more complex than direct UDID methods but provides these benefits:
+   * - Tracking simulators with your own session IDs instead of UDIDs
+   * - Storing metadata about simulator creation time and usage
+   * - Managing multiple simulators with a consistent interface
+   * 
+   * For simple use cases where you just want to boot/shutdown simulators directly:
+   * - Use bootByUDID(udid) instead of createSession + bootSimulator
+   * - Use shutdownByUDID(udid) instead of shutdownSimulator or terminateSession
+   * 
+   * How this works:
+   * 1. Finds a simulator matching the given criteria (deviceName, platformVersion)
+   * 2. Creates a wrapper object with metadata and a unique session ID
+   * 3. Stores this session in memory for later reference by session ID
+   * 
+   * @param options Optional simulator options (deviceName, platformVersion, timeout)
+   * @returns A SimulatorSession object with session ID and simulator details
    */
   async createSession(options: SimulatorOptions = {}): Promise<SimulatorSession> {
     try {

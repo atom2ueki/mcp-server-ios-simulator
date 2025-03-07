@@ -94,21 +94,29 @@ npm start
 
 ### 🧰 MCP Tools
 
-The server provides the following MCP tools:
+The server provides two distinct approaches for controlling iOS simulators:
 
-#### 📱 Simulator Management (Simplified Approach)
+#### 📱 Direct Simulator Management (Recommended)
+These tools work directly with simulator UDIDs and don't require maintaining sessions:
+
 - 📋 `list-available-simulators` - List all available simulators with their UDIDs
 - ▶️ `boot-simulator-by-udid` - Boot a simulator directly using its UDID
 - ⏹️ `shutdown-simulator-by-udid` - Shutdown a simulator directly using its UDID
 - 📊 `list-booted-simulators` - List all currently booted simulators
 
-#### 📱 Simulator Session Management (For Advanced Use Cases)
+**Use this approach when:** You just want to boot, use, and shut down simulators directly.
+
+#### 📱 Session-Based Management (Advanced)
+These tools use a session layer that tracks simulators with custom session IDs:
+
 - 📋 `list-simulator-sessions` - List all active simulator sessions
 - ➕ `create-simulator-session` - Create a new simulator session
 - ❌ `terminate-simulator-session` - Terminate a session (shuts down simulator and cleans up)
 - 🔄 `create-and-boot-simulator` - Create a new simulator session and boot it
 - ▶️ `boot-simulator` - Boot a simulator for an existing session
 - ⏹️ `shutdown-simulator` - Shutdown a simulator for an existing session
+
+**Use this approach when:** You need to track simulator metadata, reference simulators by custom IDs, or use the more advanced management features.
 
 #### 📲 Application Management
 - 📥 `install-app` - Install an application on a simulator
@@ -144,15 +152,32 @@ The server provides the following MCP tools:
 
 2. Use the provided tools to control iOS simulators directly from Claude Desktop:
    
-   **Simplified Direct Usage (Recommended):**
-   - Ask Claude: "Show me available iOS simulators"
-   - Ask Claude: "Boot the iPhone 16 simulator with UDID 5272EA61-5796-4372-86FE-3B33831D5CC1"
-   - Ask Claude: "Shut down the simulator with UDID 5272EA61-5796-4372-86FE-3B33831D5CC1"
+   **Direct UDID Approach (Recommended):**
+   1. First, ask Claude to list available simulators:
+      ```
+      "Show me all available iOS simulators"
+      ```
    
-   **Advanced Session-Based Usage:**
-   - Type commands like "Create a new iPhone simulator" or "Take a screenshot of the current simulator" 
-   - Claude will use the MCP server to execute these commands on your behalf
-   - You can use any of the tools listed above by asking Claude to perform the corresponding action
+   2. Then use the UDID to boot a specific simulator:
+      ```
+      "Boot the iOS simulator with UDID 5272EA61-5796-4372-86FE-3B33831D5CC1"
+      ```
+   
+   3. When finished, shut it down using the same UDID:
+      ```
+      "Shut down the simulator with UDID 5272EA61-5796-4372-86FE-3B33831D5CC1"
+      ```
+   
+   The direct UDID approach is simpler and more reliable for most use cases.
+   
+   **Session-Based Approach (Advanced):**
+   Only use this approach if you need the advanced features of session tracking:
+   ```
+   "Create a new simulator session for iPhone 16 Pro with iOS 18.2"
+   "Boot the simulator for session abc-123"
+   "Take a screenshot of the simulator for session abc-123"
+   "Terminate the simulator session abc-123"
+   ```
 
 ## 👨‍💻 Development
 

@@ -477,19 +477,65 @@ class SimulatorMcpServer {
    * Register simulator control tools
    */
   private registerSimulatorControl(): void {
-    // List all available simulators
+    // ====================================================
+    // DIRECT SIMULATOR CONTROL (RECOMMENDED)
+    // ====================================================
+    // These methods work directly with simulator UDIDs.
+    // They are simpler and more straightforward for most use cases.
+    // Use these unless you specifically need session management.
+    
+    // List all available simulators with UDIDs
     this.server.tool(
-      'list-all-simulators',
+      'list-available-simulators',
       {},
       async () => {
         fileLogger.info('Listing all available simulators');
         try {
-          const allSimulators = await simulatorManager.getAllSimulators();
+          const availableSimulators = await simulatorManager.getAllSimulators();
+          
+          // Group by iOS version for better readability
+          const devicesByVersion: Record<string, string[]> = {};
+          const udidMap: Record<string, string> = {};
+          
+          availableSimulators.forEach(simulator => {
+            const version = simulator.runtime.replace('com.apple.CoreSimulator.SimRuntime.iOS-', '').replace(/\./g, '-');
+            if (!devicesByVersion[version]) {
+              devicesByVersion[version] = [];
+            }
+            devicesByVersion[version].push(simulator.name);
+            udidMap[`${simulator.name}-${version}`] = simulator.udid;
+          });
+          
+          // Generate table format with UDIDs
+          let tableText = "AVAILABLE SIMULATORS\n";
+          tableText += "─────────────────────────────────────────────────────\n";
+          tableText += "NAME                 | iOS VERSION | STATE    | UDID\n";
+          tableText += "─────────────────────────────────────────────────────\n";
+          
+          for (const [version, devices] of Object.entries(devicesByVersion)) {
+            const formattedVersion = version.replace(/-/g, '.');
+            devices.sort().forEach((deviceName: string) => {
+              const simulator = availableSimulators.find(s => s.name === deviceName && s.runtime.includes(version.replace(/-/g, '.')));
+              const state = simulator ? simulator.state : 'Unknown';
+              const udid = simulator ? simulator.udid : 'Unknown';
+              tableText += `${deviceName.padEnd(20)} | iOS ${formattedVersion.padEnd(9)} | ${state.padEnd(8)} | ${udid}\n`;
+            });
+          }
+          tableText += "─────────────────────────────────────────────────────\n";
+          
+          tableText += "\n💡 Tips for working with simulators:\n";
+          tableText += "1. To boot a simulator: boot-simulator-by-udid with udid='UDID_HERE'\n";
+          tableText += "2. To shutdown a simulator: shutdown-simulator-by-udid with udid='UDID_HERE'\n";
+          
+          // For debugging, append the original JSON at the bottom
+          tableText += "\nOriginal JSON data:\n```\n";
+          tableText += JSON.stringify(availableSimulators, null, 2);
+          tableText += "\n```";
           
           return {
             content: [{
               type: 'text',
-              text: JSON.stringify(allSimulators, null, 2)
+              text: tableText
             }]
           };
         } catch (error) {
@@ -504,7 +550,99 @@ class SimulatorMcpServer {
         }
       }
     );
-
+    
+    // Boot simulator directly by UDID
+    this.server.tool(
+      'boot-simulator-by-udid',
+      {
+        udid: z.string()
+      },
+      async (params) => {
+        fileLogger.info(`Booting simulator directly by UDID: ${params.udid}`);
+        try {
+          const result = await simulatorManager.bootByUDID(params.udid);
+          if (result) {
+            return {
+              content: [{
+                type: 'text',
+                text: `Successfully booted simulator with UDID: ${params.udid}`
+              }]
+            };
+          } else {
+            return {
+              content: [{
+                type: 'text',
+                text: `Failed to boot simulator with UDID: ${params.udid}`
+              }],
+              isError: true
+            };
+          }
+        } catch (error) {
+          fileLogger.error(`Failed to boot simulator by UDID: ${params.udid}`, { error });
+          return {
+            content: [{
+              type: 'text',
+              text: `Error: ${error instanceof Error ? error.message : String(error)}`
+            }],
+            isError: true
+          };
+        }
+      }
+    );
+    
+    // Shutdown simulator by UDID
+    this.server.tool(
+      'shutdown-simulator-by-udid',
+      {
+        udid: z.string()
+      },
+      async (params) => {
+        fileLogger.info(`Shutting down simulator directly by UDID: ${params.udid}`);
+        try {
+          const success = await simulatorManager.directShutdownByUDID(params.udid);
+          
+          if (!success) {
+            return {
+              content: [{
+                type: 'text',
+                text: `Failed to shutdown simulator with UDID: ${params.udid}`
+              }],
+              isError: true
+            };
+          }
+          
+          // Verify shutdown
+          const verifySuccess = await simulatorManager.verifySimulatorShutdown(params.udid);
+          
+          if (!verifySuccess) {
+            return {
+              content: [{
+                type: 'text',
+                text: `Simulator shutdown command executed but simulator may still be running. UDID: ${params.udid}`
+              }],
+              isError: true
+            };
+          }
+          
+          return {
+            content: [{
+              type: 'text',
+              text: `Simulator with UDID: ${params.udid} successfully shut down`
+            }]
+          };
+        } catch (error) {
+          fileLogger.error(`Failed to shutdown simulator by UDID: ${params.udid}`, { error });
+          return {
+            content: [{
+              type: 'text',
+              text: `Error: ${error instanceof Error ? error.message : String(error)}`
+            }],
+            isError: true
+          };
+        }
+      }
+    );
+    
     // List all booted simulators
     this.server.tool(
       'list-booted-simulators',
@@ -557,36 +695,31 @@ class SimulatorMcpServer {
         }
       }
     );
-
-    // Boot simulator
+    
+    // ====================================================
+    // SESSION-BASED SIMULATOR MANAGEMENT (ADVANCED)
+    // ====================================================
+    // These methods use a session-based approach that tracks simulators
+    // with custom session IDs instead of UDIDs.
+    // This is more complex but useful for advanced use cases.
+    
+    // List all simulator sessions
     this.server.tool(
-      'boot-simulator',
-      {
-        sessionId: z.string()
-      },
-      async ({ sessionId }) => {
-        fileLogger.info(`Booting simulator: ${sessionId}`);
+      'list-simulator-sessions',
+      {},
+      async () => {
+        fileLogger.info('Listing all simulator sessions');
         try {
-          const success = await simulatorManager.bootSimulator(sessionId);
-          
-          if (!success) {
-            return {
-              content: [{
-                type: 'text',
-                text: `Failed to boot simulator for session: ${sessionId}`
-              }],
-              isError: true
-            };
-          }
+          const sessions = simulatorManager.getAllSessions();
           
           return {
             content: [{
               type: 'text',
-              text: `Simulator booted for session: ${sessionId}`
+              text: JSON.stringify(sessions)
             }]
           };
         } catch (error) {
-          fileLogger.error(`Failed to boot simulator for session: ${sessionId}`, { error });
+          fileLogger.error('Failed to list simulator sessions', { error });
           return {
             content: [{
               type: 'text',
@@ -598,54 +731,53 @@ class SimulatorMcpServer {
       }
     );
     
-    // Create and boot simulator in one step
+    // Create simulator session
     this.server.tool(
-      'create-and-boot-simulator',
+      'create-simulator-session',
       {
         deviceName: z.string().optional(),
         platformVersion: z.string().optional(),
-        timeout: z.number().optional()
+        timeout: z.number().optional(),
+        autoboot: z.boolean().optional()
       },
       async (params) => {
-        fileLogger.info('Creating and booting simulator', params);
+        fileLogger.info('Creating simulator session', params);
         try {
-          // Step 1: Create the simulator
+          // Get available simulators to provide helpful error messages if needed
+          const availableSimulators = await simulatorManager.getAllSimulators();
+          
           const session = await simulatorManager.createSession({
             deviceName: params.deviceName,
             platformVersion: params.platformVersion,
             timeout: params.timeout
           });
           
-          // Step 2: Boot the simulator
-          fileLogger.info(`Booting simulator session: ${session.id}`);
-          const bootResult = await simulatorManager.bootSimulator(session.id);
+          // Automatically boot the simulator if requested (default to true)
+          const shouldBoot = params.autoboot !== false;
+          let bootResult = null;
           
-          if (!bootResult) {
-            return {
-              content: [{
-                type: 'text',
-                text: JSON.stringify({
-                  ...session,
-                  booted: false,
-                  error: "Failed to boot simulator after creation"
-                })
-              }],
-              isError: true
-            };
+          if (shouldBoot) {
+            fileLogger.info(`Auto-booting simulator session: ${session.id}`);
+            bootResult = await simulatorManager.bootSimulator(session.id);
+            
+            if (!bootResult) {
+              fileLogger.warn(`Failed to auto-boot simulator session: ${session.id}`);
+            } else {
+              fileLogger.info(`Successfully auto-booted simulator session: ${session.id}`);
+            }
           }
           
-          // Return success with both session details and boot status
           return {
             content: [{
               type: 'text',
               text: JSON.stringify({
                 ...session,
-                booted: true
+                booted: shouldBoot ? bootResult : false
               })
             }]
           };
         } catch (error) {
-          fileLogger.error('Failed to create and boot simulator', { error });
+          fileLogger.error('Failed to create simulator session', { error });
           
           // Get available simulators to provide helpful error messages
           let helpText = "";
@@ -720,165 +852,6 @@ class SimulatorMcpServer {
           };
         } catch (error) {
           fileLogger.error(`Failed to shutdown simulator for session: ${sessionId}`, { error });
-          return {
-            content: [{
-              type: 'text',
-              text: `Error: ${error instanceof Error ? error.message : String(error)}`
-            }],
-            isError: true
-          };
-        }
-      }
-    );
-    
-    // Shutdown simulator directly by UDID
-    this.server.tool(
-      'shutdown-simulator-by-udid',
-      {
-        udid: z.string()
-      },
-      async ({ udid }) => {
-        fileLogger.info(`Shutting down simulator directly by UDID: ${udid}`);
-        try {
-          const success = await simulatorManager.directShutdownByUDID(udid);
-          
-          if (!success) {
-            return {
-              content: [{
-                type: 'text',
-                text: `Failed to shutdown simulator with UDID: ${udid}`
-              }],
-              isError: true
-            };
-          }
-          
-          // Verify shutdown
-          const verifySuccess = await simulatorManager.verifySimulatorShutdown(udid);
-          
-          if (!verifySuccess) {
-            return {
-              content: [{
-                type: 'text',
-                text: `Simulator shutdown command executed but simulator may still be running. UDID: ${udid}`
-              }],
-              isError: true
-            };
-          }
-          
-          return {
-            content: [{
-              type: 'text',
-              text: `Simulator with UDID: ${udid} successfully shut down`
-            }]
-          };
-        } catch (error) {
-          fileLogger.error(`Failed to shutdown simulator by UDID: ${udid}`, { error });
-          return {
-            content: [{
-              type: 'text',
-              text: `Error: ${error instanceof Error ? error.message : String(error)}`
-            }],
-            isError: true
-          };
-        }
-      }
-    );
-
-    // Boot simulator directly by UDID
-    this.server.tool(
-      'boot-simulator-by-udid',
-      {
-        udid: z.string()
-      },
-      async (params) => {
-        fileLogger.info(`Booting simulator directly by UDID: ${params.udid}`);
-        try {
-          const result = await simulatorManager.bootByUDID(params.udid);
-          if (result) {
-            return {
-              content: [{
-                type: 'text',
-                text: `Successfully booted simulator with UDID: ${params.udid}`
-              }]
-            };
-          } else {
-            return {
-              content: [{
-                type: 'text',
-                text: `Failed to boot simulator with UDID: ${params.udid}`
-              }],
-              isError: true
-            };
-          }
-        } catch (error) {
-          fileLogger.error(`Failed to boot simulator by UDID: ${params.udid}`, { error });
-          return {
-            content: [{
-              type: 'text',
-              text: `Error: ${error instanceof Error ? error.message : String(error)}`
-            }],
-            isError: true
-          };
-        }
-      }
-    );
-    
-    // List all available simulators (not just booted ones)
-    this.server.tool(
-      'list-available-simulators',
-      {},
-      async () => {
-        fileLogger.info('Listing all available simulators');
-        try {
-          const availableSimulators = await simulatorManager.getAllSimulators();
-          
-          // Group by iOS version for better readability
-          const devicesByVersion: Record<string, string[]> = {};
-          const udidMap: Record<string, string> = {};
-          
-          availableSimulators.forEach(simulator => {
-            const version = simulator.runtime.replace('com.apple.CoreSimulator.SimRuntime.iOS-', '').replace(/\./g, '-');
-            if (!devicesByVersion[version]) {
-              devicesByVersion[version] = [];
-            }
-            devicesByVersion[version].push(simulator.name);
-            udidMap[`${simulator.name}-${version}`] = simulator.udid;
-          });
-          
-          // Generate table format with UDIDs
-          let tableText = "AVAILABLE SIMULATORS\n";
-          tableText += "─────────────────────────────────────────────────────\n";
-          tableText += "NAME                 | iOS VERSION | STATE    | UDID\n";
-          tableText += "─────────────────────────────────────────────────────\n";
-          
-          for (const [version, devices] of Object.entries(devicesByVersion)) {
-            const formattedVersion = version.replace(/-/g, '.');
-            devices.sort().forEach((deviceName: string) => {
-              const simulator = availableSimulators.find(s => s.name === deviceName && s.runtime.includes(version.replace(/-/g, '.')));
-              const state = simulator ? simulator.state : 'Unknown';
-              const udid = simulator ? simulator.udid : 'Unknown';
-              tableText += `${deviceName.padEnd(20)} | iOS ${formattedVersion.padEnd(9)} | ${state.padEnd(8)} | ${udid}\n`;
-            });
-          }
-          tableText += "─────────────────────────────────────────────────────\n";
-          
-          tableText += "\n💡 Tips for working with simulators:\n";
-          tableText += "1. To boot a simulator: boot-simulator-by-udid with udid='UDID_HERE'\n";
-          tableText += "2. To shutdown a simulator: shutdown-simulator-by-udid with udid='UDID_HERE'\n";
-          
-          // For debugging, append the original JSON at the bottom
-          tableText += "\nOriginal JSON data:\n```\n";
-          tableText += JSON.stringify(availableSimulators, null, 2);
-          tableText += "\n```";
-          
-          return {
-            content: [{
-              type: 'text',
-              text: tableText
-            }]
-          };
-        } catch (error) {
-          fileLogger.error('Failed to list available simulators', { error });
           return {
             content: [{
               type: 'text',
