@@ -108,6 +108,15 @@ class SimulatorMcpServer {
       },
       async (params) => {
         fileLogger.info('Creating simulator session', params);
+        
+        // Adding a warning before even trying to create a session
+        fileLogger.info('Warning user about session-based approach');
+        const warningText = "\n⚠️ WARNING: You're using the complex session-based approach ⚠️\n" +
+                           "For most users, we recommend the simpler direct UDID approach instead:\n\n" +
+                           "1. First run: list-available-simulators\n" +
+                           "2. Then use: boot-simulator-by-udid with the UDID from the list\n\n" +
+                           "Proceeding with session creation anyway...\n";
+        
         try {
           // Get available simulators to provide helpful error messages if needed
           const availableSimulators = await simulatorManager.getAllSimulators();
@@ -136,7 +145,7 @@ class SimulatorMcpServer {
           return {
             content: [{
               type: 'text',
-              text: JSON.stringify({
+              text: warningText + JSON.stringify({
                 ...session,
                 booted: shouldBoot ? bootResult : false
               })
@@ -162,7 +171,12 @@ class SimulatorMcpServer {
             });
             
             // Generate helpful message with available devices
-            helpText = "\n\nAvailable simulators:\n";
+            helpText = "\n\n⚠️ ERROR, BUT DON'T WORRY! There's a much easier way: ⚠️\n\n";
+            helpText += "Instead of using sessions, try the direct UDID approach:\n";
+            helpText += "1. Run 'list-available-simulators' to see all available simulators\n";
+            helpText += "2. Choose one from the list and boot it directly with its UDID\n\n";
+            
+            helpText += "Available simulators you can use:\n";
             for (const [version, devices] of Object.entries(devicesByVersion)) {
               const formattedVersion = version.replace(/-/g, '.');
               helpText += `\n📱 iOS ${formattedVersion}:\n`;
@@ -170,10 +184,20 @@ class SimulatorMcpServer {
               helpText += '\n';
             }
             
-            helpText += "\n🔎 Tips for specifying device names:\n";
-            helpText += "  - Use the exact name as listed above (e.g., 'iPhone 16 Pro')\n";
-            helpText += "  - For platformVersion, use the format '18.2' (not 'iOS 18.2')\n";
-            helpText += "  - You can also use a UDID directly as the deviceName\n";
+            // Try to suggest a specific device if possible
+            if (params.deviceName) {
+              const matchSimulators = availableSimulators.filter(sim => 
+                sim.name.toLowerCase().includes(params.deviceName?.toLowerCase() || "")
+              );
+              
+              if (matchSimulators.length > 0) {
+                const suggestedSim = matchSimulators[0];
+                helpText += "\n💡 Try this instead:\n";
+                helpText += `Run: list-available-simulators\n`;
+                helpText += `Then: boot-simulator-by-udid with udid='${suggestedSim.udid}'\n`;
+              }
+            }
+            
           } catch (helpError) {
             helpText = "\nCould not retrieve list of available simulators.";
           }
@@ -181,7 +205,7 @@ class SimulatorMcpServer {
           return {
             content: [{
               type: 'text',
-              text: `Error: ${error instanceof Error ? error.message : String(error)}${helpText}`
+              text: `${helpText}\n\nOriginal error: ${error instanceof Error ? error.message : String(error)}`
             }],
             isError: true
           };
@@ -507,7 +531,7 @@ class SimulatorMcpServer {
           });
           
           // Generate table format with UDIDs
-          let tableText = "AVAILABLE SIMULATORS\n";
+          let tableText = "⭐️ AVAILABLE SIMULATORS - USE THESE UDIDs TO BOOT DIRECTLY ⭐️\n";
           tableText += "─────────────────────────────────────────────────────\n";
           tableText += "NAME                 | iOS VERSION | STATE    | UDID\n";
           tableText += "─────────────────────────────────────────────────────\n";
@@ -523,9 +547,11 @@ class SimulatorMcpServer {
           }
           tableText += "─────────────────────────────────────────────────────\n";
           
-          tableText += "\n💡 Tips for working with simulators:\n";
-          tableText += "1. To boot a simulator: boot-simulator-by-udid with udid='UDID_HERE'\n";
-          tableText += "2. To shutdown a simulator: shutdown-simulator-by-udid with udid='UDID_HERE'\n";
+          tableText += "\n💡 RECOMMENDED WORKFLOW:\n";
+          tableText += "1️⃣ FIRST: Find the simulator you want from the list above\n";
+          tableText += "2️⃣ THEN: Use 'boot-simulator-by-udid' with udid='COPY_UDID_FROM_ABOVE'\n";
+          tableText += "3️⃣ FINALLY: When done, use 'shutdown-simulator-by-udid' with the same UDID\n\n";
+          tableText += "❌ AVOID using session-based methods like 'create-simulator-session' unless you specifically need advanced features\n";
           
           // For debugging, append the original JSON at the bottom
           tableText += "\nOriginal JSON data:\n```\n";
@@ -661,15 +687,17 @@ class SimulatorMcpServer {
           if (bootedSimulators.length === 0) {
             tableText += "No simulators currently booted.\n";
             tableText += "─────────────────────────────────────────────────────\n";
-            tableText += "\n💡 Tip: Use the direct UDID approach for simplicity:\n";
-            tableText += "1. First, list available simulators: list-available-simulators\n";
-            tableText += "2. Then boot one directly: boot-simulator-by-udid with udid='UDID_HERE'\n";
+            tableText += "\n💡 RECOMMENDED WORKFLOW:\n";
+            tableText += "1️⃣ FIRST: Use 'list-available-simulators' to see all available devices with their UDIDs\n";
+            tableText += "2️⃣ THEN: Use 'boot-simulator-by-udid' with the UDID of your chosen device\n\n";
+            tableText += "❌ AVOID creating simulator sessions unless absolutely necessary\n";
           } else {
             bootedSimulators.forEach(sim => {
               tableText += `${sim.udid} | ${sim.name.padEnd(13)} | ${sim.state.padEnd(6)} | ${sim.runtime}\n`;
             });
             tableText += "─────────────────────────────────────────────────────\n";
-            tableText += "\n💡 Tip: To shut down a simulator, use: shutdown-simulator-by-udid with udid='UDID_HERE'\n";
+            tableText += "\n💡 To shut down a simulator, use: shutdown-simulator-by-udid with udid='UDID_FROM_ABOVE'\n";
+            tableText += "❌ AVOID using session-based methods like 'shutdown-simulator' or 'terminate-session'\n";
           }
           
           // For debugging, append the original JSON at the bottom
@@ -724,98 +752,6 @@ class SimulatorMcpServer {
             content: [{
               type: 'text',
               text: `Error: ${error instanceof Error ? error.message : String(error)}`
-            }],
-            isError: true
-          };
-        }
-      }
-    );
-    
-    // Create simulator session
-    this.server.tool(
-      'create-simulator-session',
-      {
-        deviceName: z.string().optional(),
-        platformVersion: z.string().optional(),
-        timeout: z.number().optional(),
-        autoboot: z.boolean().optional()
-      },
-      async (params) => {
-        fileLogger.info('Creating simulator session', params);
-        try {
-          // Get available simulators to provide helpful error messages if needed
-          const availableSimulators = await simulatorManager.getAllSimulators();
-          
-          const session = await simulatorManager.createSession({
-            deviceName: params.deviceName,
-            platformVersion: params.platformVersion,
-            timeout: params.timeout
-          });
-          
-          // Automatically boot the simulator if requested (default to true)
-          const shouldBoot = params.autoboot !== false;
-          let bootResult = null;
-          
-          if (shouldBoot) {
-            fileLogger.info(`Auto-booting simulator session: ${session.id}`);
-            bootResult = await simulatorManager.bootSimulator(session.id);
-            
-            if (!bootResult) {
-              fileLogger.warn(`Failed to auto-boot simulator session: ${session.id}`);
-            } else {
-              fileLogger.info(`Successfully auto-booted simulator session: ${session.id}`);
-            }
-          }
-          
-          return {
-            content: [{
-              type: 'text',
-              text: JSON.stringify({
-                ...session,
-                booted: shouldBoot ? bootResult : false
-              })
-            }]
-          };
-        } catch (error) {
-          fileLogger.error('Failed to create simulator session', { error });
-          
-          // Get available simulators to provide helpful error messages
-          let helpText = "";
-          try {
-            const availableSimulators = await simulatorManager.getAllSimulators();
-            
-            // Group by iOS version for better readability
-            const devicesByVersion: Record<string, string[]> = {};
-            
-            availableSimulators.forEach(simulator => {
-              const version = simulator.runtime.replace('com.apple.CoreSimulator.SimRuntime.iOS-', '').replace(/\./g, '-');
-              if (!devicesByVersion[version]) {
-                devicesByVersion[version] = [];
-              }
-              devicesByVersion[version].push(simulator.name);
-            });
-            
-            // Generate helpful message with available devices
-            helpText = "\n\nAvailable simulators:\n";
-            for (const [version, devices] of Object.entries(devicesByVersion)) {
-              const formattedVersion = version.replace(/-/g, '.');
-              helpText += `\n📱 iOS ${formattedVersion}:\n`;
-              helpText += devices.sort().map((d: string) => `  - ${d}`).join('\n');
-              helpText += '\n';
-            }
-            
-            helpText += "\n🔎 Tips for specifying device names:\n";
-            helpText += "  - Use the exact name as listed above (e.g., 'iPhone 16 Pro')\n";
-            helpText += "  - For platformVersion, use the format '18.2' (not 'iOS 18.2')\n";
-            helpText += "  - You can also use a UDID directly as the deviceName\n";
-          } catch (helpError) {
-            helpText = "\nCould not retrieve list of available simulators.";
-          }
-          
-          return {
-            content: [{
-              type: 'text',
-              text: `Error: ${error instanceof Error ? error.message : String(error)}${helpText}`
             }],
             isError: true
           };
@@ -906,6 +842,98 @@ class SimulatorMcpServer {
           }
         }]
       })
+    );
+    
+    // Add a dedicated prompt for booting a simulator by name and iOS version
+    this.server.prompt(
+      'boot-simulator-by-name',
+      {
+        deviceName: z.string(),
+        iosVersion: z.string().optional()
+      },
+      async ({ deviceName, iosVersion }) => {
+        fileLogger.info(`Handling boot-simulator-by-name prompt with deviceName: ${deviceName || 'any'}, iosVersion: ${iosVersion || 'latest'}`);
+        
+        // Get all available simulators
+        const availableSimulators = await simulatorManager.getAllSimulators();
+        
+        // Find the best matching simulator
+        let matchingSimulator;
+        let matchMessage = "";
+        
+        // First try exact match with device name and iOS version if provided
+        if (deviceName && iosVersion) {
+          matchingSimulator = availableSimulators.find(sim => 
+            sim.name.toLowerCase() === deviceName.toLowerCase() && 
+            sim.runtime.includes(iosVersion.replace(/\./g, '-'))
+          );
+          
+          if (matchingSimulator) {
+            matchMessage = `Found exact match for ${deviceName} with iOS ${iosVersion}`;
+          }
+        }
+        
+        // If no match yet, try just device name
+        if (deviceName && !matchingSimulator) {
+          matchingSimulator = availableSimulators.find(sim => 
+            sim.name.toLowerCase() === deviceName.toLowerCase()
+          );
+          
+          if (matchingSimulator) {
+            matchMessage = `Found exact match for ${deviceName}`;
+          }
+        }
+        
+        // If still no match, try contains for device name
+        if (deviceName && !matchingSimulator) {
+          // Sort by name to prioritize more specific matches
+          const candidateSimulators = availableSimulators
+            .filter(sim => sim.name.toLowerCase().includes(deviceName.toLowerCase()))
+            .sort((a, b) => a.name.length - b.name.length);
+          
+          if (candidateSimulators.length > 0) {
+            // If iOS version provided, try to find a match with that version first
+            if (iosVersion) {
+              matchingSimulator = candidateSimulators.find(sim => 
+                sim.runtime.includes(iosVersion.replace(/\./g, '-'))
+              );
+              
+              if (matchingSimulator) {
+                matchMessage = `Found partial match for "${deviceName}" with iOS ${iosVersion}: ${matchingSimulator.name}`;
+              }
+            }
+            
+            // If still no match, just take the first match
+            if (!matchingSimulator) {
+              matchingSimulator = candidateSimulators[0];
+              matchMessage = `Found best match for "${deviceName}": ${matchingSimulator.name}`;
+            }
+          }
+        }
+        
+        if (!matchingSimulator) {
+          return {
+            messages: [{
+              role: 'user',
+              content: {
+                type: 'text',
+                text: `list-available-simulators`
+              }
+            }]
+          };
+        }
+        
+        // Found a matching simulator, boot it using UDID
+        return {
+          messages: [{
+            role: 'user',
+            content: {
+              type: 'text',
+              text: `boot-simulator-by-udid with udid='${matchingSimulator.udid}'`
+            }
+          }]
+        };
+      }
     );
   }
 
