@@ -1,0 +1,36 @@
+# Smithery configuration file: https://smithery.ai/docs/build/project-config
+
+startCommand:
+  type: stdio
+  configSchema:
+    # JSON Schema defining the configuration options for the MCP.
+    type: object
+    properties:
+      simulatorDefaultDevice:
+        type: string
+        default: iPhone 16
+        description: Default simulator device name
+      simulatorDefaultOs:
+        type: string
+        default: "18.2"
+        description: Default iOS version for simulator
+      simulatorTimeout:
+        type: number
+        default: 30000
+        description: Timeout in milliseconds for simulator operations
+  commandFunction:
+    # A JS function that produces the CLI command based on the given config to start the MCP on stdio.
+    |-
+    (config) => ({
+      command: 'node',
+      args: ['dist/index.js'],
+      env: {
+        SIMULATOR_DEFAULT_DEVICE: config.simulatorDefaultDevice,
+        SIMULATOR_DEFAULT_OS: config.simulatorDefaultOs,
+        SIMULATOR_TIMEOUT: config.simulatorTimeout.toString(),
+      }
+    })
+  exampleConfig:
+    simulatorDefaultDevice: iPhone 16 Pro
+    simulatorDefaultOs: "18.2"
+    simulatorTimeout: 30000

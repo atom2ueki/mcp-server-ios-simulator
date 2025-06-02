@@ -1,4 +1,5 @@
 # 📱 MCP Server for iOS Simulator
+[![smithery badge](https://smithery.ai/badge/@atom2ueki/mcp-server-ios-simulator)](https://smithery.ai/server/@atom2ueki/mcp-server-ios-simulator)
 
 A server that implements the Model Context Protocol (MCP) for iOS simulators, built on top of [appium-ios-simulator](https://github.com/appium/appium-ios-simulator) and utilizing the [MCP TypeScript SDK](https://github.com/modelcontextprotocol/typescript-sdk).
 
@@ -55,6 +56,15 @@ The server consists of three main components:
 
 ## 🔧 Installation
 
+### Installing via Smithery
+
+To install iOS Simulator Control Server for Claude Desktop automatically via [Smithery](https://smithery.ai/server/@atom2ueki/mcp-server-ios-simulator):
+
+```bash
+npx -y @smithery/cli install @atom2ueki/mcp-server-ios-simulator --client claude
+```
+
+### Manual Installation
 ```bash
 # Clone the repository
 git clone https://github.com/atom2ueki/mcp-server-ios-simulator.git
