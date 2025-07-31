@@ -3,6 +3,10 @@
 
 A server that implements the Model Context Protocol (MCP) for iOS simulators, built on top of [appium-ios-simulator](https://github.com/appium/appium-ios-simulator) and utilizing the [MCP TypeScript SDK](https://github.com/modelcontextprotocol/typescript-sdk).
 
+<a href="https://glama.ai/mcp/servers/@atom2ueki/mcp-server-ios-simulator">
+  <img width="380" height="200" src="https://glama.ai/mcp/servers/@atom2ueki/mcp-server-ios-simulator/badge" alt="Server for iOS Simulator MCP server" />
+</a>
+
 ## 📋 Overview
 
 This project provides a bridge between iOS simulators and the Model Context Protocol, allowing for standardized communication with iOS simulator instances. It enables programmatic control of iOS simulators while leveraging the MCP protocol for consistent interfaces across different environments. The server utilizes stdio as its transport mechanism, making it ideal for integration with Claude Desktop and other MCP-compatible clients.
