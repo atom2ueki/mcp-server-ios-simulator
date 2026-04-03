@@ -1,5 +1,5 @@
 import { getSimulator } from 'appium-ios-simulator';
-import { v4 as uuidv4 } from 'uuid';
+import { randomUUID } from 'crypto';
 import winston from 'winston';
 import fs from 'fs';
 import path from 'path';
@@ -255,7 +255,7 @@ class SimulatorManager {
       
       // Create a new session
       const session: SimulatorSession = {
-        id: uuidv4(),
+        id: randomUUID(),
         simulator: simulator as unknown as Simulator, // Use type assertion to make TypeScript happy
         udid,
         deviceName: matchingSimulator.name,
