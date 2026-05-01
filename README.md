@@ -78,6 +78,17 @@ cd mcp-server-ios-simulator
 npm install
 ```
 
+### 🐳 Docker
+
+A Dockerfile is provided so the server can be packaged for the [Glama MCP directory](https://glama.ai/mcp/servers/atom2ueki/mcp-server-ios-simulator) and other container hosts.
+
+```bash
+docker build -t mcp-server-ios-simulator .
+docker run --rm -i mcp-server-ios-simulator
+```
+
+> **Note:** iOS simulators only run on macOS, so a Linux container can host the MCP process and respond on stdio but cannot drive a real simulator. The container is intended for portability checks and remote MCP environments that bridge to a macOS host.
+
 ## ⚙️ Configuration
 
 Configuration is handled through the `src/config.ts` file:
