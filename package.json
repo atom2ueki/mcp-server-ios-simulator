@@ -20,7 +20,7 @@
   "author": "",
   "license": "MIT",
   "dependencies": {
-    "appium-ios-simulator": "github:appium/appium-ios-simulator#v6.2.0",
+    "appium-ios-simulator": "github:appium/appium-ios-simulator#v8.1.1",
     "express": "^5.2.1",
     "body-parser": "^2.2.2",
     "cors": "^2.8.5",
