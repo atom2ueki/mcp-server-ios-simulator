@@ -1,5 +1,3 @@
-# syntax=docker/dockerfile:1.7
-
 # --- Builder stage: compile TypeScript ---
 FROM node:lts-alpine AS builder
 
