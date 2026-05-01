@@ -1,5 +1,5 @@
 # --- Builder stage: compile TypeScript ---
-FROM node:lts-alpine AS builder
+FROM node:22-alpine AS builder
 
 WORKDIR /app
 
@@ -14,7 +14,7 @@ COPY src ./src
 RUN npm run build
 
 # --- Runtime stage: production-only deps + compiled output ---
-FROM node:lts-alpine
+FROM node:22-alpine
 
 WORKDIR /app
 
