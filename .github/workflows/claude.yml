@@ -39,7 +39,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v6
         with:
-          ref: ${{ steps.pr-ref.outputs.sha || github.ref }}
+          ref: ${{ steps.pr-ref.outputs.sha || github.event.pull_request.head.sha || github.ref }}
           fetch-depth: 1
 
       - name: Run Claude Code
