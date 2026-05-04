@@ -28,7 +28,7 @@
     "uuid": "^13.0.0",
     "@modelcontextprotocol/sdk": "^1.6.1",
     "dotenv": "^17.4.2",
-    "zod": "^3.22.4"
+    "zod": "^4.4.3"
   },
   "devDependencies": {
     "@types/cors": "^2.8.17",
