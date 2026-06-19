@@ -23,7 +23,7 @@
     "appium-ios-simulator": "^8.1.1",
     "express": "^5.2.1",
     "body-parser": "^2.2.2",
-    "cors": "^2.8.5",
+    "cors": "^2.8.6",
     "winston": "^3.19.0",
     "uuid": "^13.0.0",
     "@modelcontextprotocol/sdk": "^1.6.1",
@@ -31,7 +31,7 @@
     "zod": "^3.22.4"
   },
   "devDependencies": {
-    "@types/cors": "^2.8.17",
+    "@types/cors": "^2.8.19",
     "@types/express": "^5.0.6",
     "@types/node": "^20.10.5",
     "@types/uuid": "^11.0.0",
